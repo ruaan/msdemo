@@ -7,7 +7,7 @@ trigger:
 - master
 
 pool:
-  vmImage: 'Hosted VS2017'
+  vmImage: 'ubuntu-latest'
 
 steps:
 
