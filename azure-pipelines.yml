@@ -7,15 +7,54 @@ trigger:
 - master
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'Hosted VS2017'
 
 steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '10.x'
-  displayName: 'Install Node.js'
 
-- script: |
-    npm install
-    npm run build
-  displayName: 'npm install and build'
+- task: NodeTool@0
+  displayName: 'Use Node version'
+  inputs:
+    versionSpec: 8.4
+steps:
+- task: Npm@0
+  displayName: 'Install application dependencies'
+  inputs:
+    cwd: Application
+    arguments: '--force'
+steps:
+- task: Npm@0
+  displayName: 'Install test dependencies'
+  inputs:
+    cwd: Tests
+    arguments: '--force'
+steps:
+- task: gulp@0
+  displayName: 'Run unit tests'
+  inputs:
+    gulpFile: Tests/gulpfile.js
+    targets: unittest
+    gulpjs: 'Tests/node_modules/gulp/bin/gulp.js'
+    publishJUnitResults: true
+steps:
+- task: ArchiveFiles@2
+  displayName: 'Archive application'
+  inputs:
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)/Application'
+    includeRootFolder: false
+    archiveFile: '$(Build.ArtifactStagingDirectory)/Application$(Build.BuildId).zip'
+steps:
+- task: ArchiveFiles@2
+  displayName: 'Archive tests'
+  inputs:
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)/Tests'
+    includeRootFolder: false
+    archiveFile: '$(Build.ArtifactStagingDirectory)/Tests$(Build.BuildId).zip'
+steps:
+- task: CopyFiles@2
+  displayName: 'Copy ARM templates'
+  inputs:
+    SourceFolder: armTemplates
+    TargetFolder: '$(build.artifactstagingdirectory)'
+steps:
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
